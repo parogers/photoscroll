@@ -45,14 +45,20 @@ function onAllow() {
             videoEl.value.play();
         })
         .catch((err) => {
-            console.error(`An error occurred: ${err}`);
+            if (err.name === 'NotFoundError') {
+                videoEl.value.src = '/sample.mp4';
+                videoEl.value.muted = true;
+                videoEl.value.play();
+                return;
+            }
+            console.error('An error occurred:', err);
             error.value = err;
         });
 }
 
 
-function hasMediaDevices() {
-    return !!navigator.mediaDevices;
+function hasGetUserMedia(): boolean {
+    return !!navigator?.mediaDevices?.getUserMedia;
 }
 
 
@@ -84,7 +90,7 @@ function takePicture() {
 <template>
     <p v-if="error" class="error">{{ error }}</p>
 
-    <p v-if="!hasMediaDevices()" class="error">
+    <p v-if="!hasGetUserMedia()" class="error">
         Media devices API not supported
     </p>
 
@@ -121,9 +127,9 @@ button {
     color: red;
 }
 
-canvas {
+/* canvas {
     display: none;
-}
+} */
 
 figure {
     margin: 0;
