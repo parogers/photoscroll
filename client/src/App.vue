@@ -1,6 +1,133 @@
 <script setup lang="ts">
+
+import { onMounted, ref, useTemplateRef } from 'vue';
+
+const width = 320; // We will scale the photo width to this
+let height = 0; // This will be computed based on the input stream
+
+let streaming = false;
+
+const error = ref('');
+const videoEl = useTemplateRef('video');
+const photoEl = useTemplateRef('photo');
+const canvasEl = useTemplateRef('canvas');
+
+
+onMounted(() => {
+    const startButton = document.getElementById("start-button");
+    const allowButton = document.getElementById("permissions-button");
+    videoEl.value.addEventListener("canplay", (ev) => {
+        if (!streaming) {
+            height = videoEl.value.videoHeight / (videoEl.value.videoWidth / width);
+
+            videoEl.value.setAttribute("width", width);
+            videoEl.value.setAttribute("height", height);
+            canvasEl.value.setAttribute("width", width);
+            canvasEl.value.setAttribute("height", height);
+            streaming = true;
+        }
+    });
+    clearPhoto();
+});
+
+
+function onCapture(ev) {
+    takePicture();
+    ev.preventDefault();
+}
+
+
+function onAllow() {
+    navigator.mediaDevices
+        .getUserMedia({ video: true, audio: false })
+        .then((stream) => {
+            videoEl.value.srcObject = stream;
+            videoEl.value.play();
+        })
+        .catch((err) => {
+            console.error(`An error occurred: ${err}`);
+            error.value = err;
+        });
+}
+
+
+function hasMediaDevices() {
+    return !!navigator.mediaDevices;
+}
+
+
+function clearPhoto() {
+    const context = canvasEl.value.getContext("2d");
+    context.fillStyle = "#aaaaaa";
+    context.fillRect(0, 0, canvasEl.value.width, canvasEl.value.height);
+
+    const data = canvasEl.value.toDataURL("image/png");
+    photoEl.value.setAttribute("src", data);
+}
+
+function takePicture() {
+    const context = canvasEl.value.getContext("2d");
+    if (width && height) {
+        canvasEl.value.width = width;
+        canvasEl.value.height = height;
+        context.filter = 'none';
+        context.drawImage(videoEl.value, 0, 0, width, height);
+
+        const data = canvasEl.value.toDataURL("image/png");
+        photoEl.value.setAttribute("src", data);
+    } else {
+        clearPhoto();
+    }
+}
 </script>
 
 <template>
-    Hello world
+    <p v-if="error" class="error">{{ error }}</p>
+
+    <p v-if="!hasMediaDevices()" class="error">
+        Media devices API not supported
+    </p>
+
+    <div>
+        <button id="permissions-button" @click="onAllow">
+            Allow camera
+        </button>
+    </div>
+
+    <video ref="video">Video stream not available.</video>
+    <div>
+        <button id="start-button" @click="onCapture">
+            Capture photo
+        </button>
+    </div>
+
+    <figure>
+        <img ref="photo" src="" alt="The screen capture will appear in this box." />
+    </figure>
+
+    <canvas ref="canvas"></canvas>
 </template>
+
+<style scoped>
+video, img {
+    border: solid 1px gray;
+}
+
+button {
+    font-size: x-large;
+}
+
+.error {
+    color: red;
+}
+
+canvas {
+    display: none;
+}
+
+figure {
+    margin: 0;
+    padding: 0;
+    margin-top: 1em;
+}
+</style>
