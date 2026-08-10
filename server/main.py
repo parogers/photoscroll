@@ -17,7 +17,7 @@ app.add_middleware(
 
 @app.get('/')
 async def index():
-    return RedirectResponse('/static/index.html')
+    return ''
 
 
 @app.post('/upload')

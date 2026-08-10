@@ -102,17 +102,22 @@ function takePicture() {
 }
 
 
-async function uploadPhoto(data) {
-    const form = new FormData();
-    form.append('file', new File([data], 'photo.png'));
-    const response = await fetch(
-        'http://localhost:8000/upload',
-        {
-            method: 'POST',
-            body: form,
-        },
-    );
-    console.log(response);
+async function uploadPhoto(data)
+{
+    try {
+        const form = new FormData();
+        form.append('file', new File([data], 'photo.png'));
+        const response = await fetch(
+            'http://192.168.100.119:8000/upload',
+            {
+                method: 'POST',
+                body: form,
+            },
+        );
+        console.log(response);
+    } catch(error) {
+        alert(error);
+    }
 }
 </script>
 
