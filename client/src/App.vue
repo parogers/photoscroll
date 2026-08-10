@@ -89,10 +89,30 @@ function takePicture() {
 
         const data = canvasEl.value.toDataURL("image/png");
         photos.push(data);
-        // photoEl.value.setAttribute("src", data);
+
+        canvasEl.value.toBlob(blob => {
+            console.log(blob);
+            uploadPhoto(blob);
+        })
+
+        // uploadPhoto(data);
     } else {
         clearPhoto();
     }
+}
+
+
+async function uploadPhoto(data) {
+    const form = new FormData();
+    form.append('file', new File([data], 'photo.png'));
+    const response = await fetch(
+        'http://localhost:8000/upload',
+        {
+            method: 'POST',
+            body: form,
+        },
+    );
+    console.log(response);
 }
 </script>
 
