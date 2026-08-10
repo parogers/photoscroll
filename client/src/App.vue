@@ -1,12 +1,13 @@
 <script setup lang="ts">
 
-import { onMounted, ref, useTemplateRef } from 'vue';
+import { onMounted, ref, reactive, useTemplateRef } from 'vue';
 
 const width = 320; // We will scale the photo width to this
 let height = 0; // This will be computed based on the input stream
 
 let streaming = false;
 
+const photos = reactive([]);
 const error = ref('');
 const videoEl = useTemplateRef('video');
 const photoEl = useTemplateRef('photo');
@@ -32,8 +33,14 @@ onMounted(() => {
 
 
 function onCapture(ev) {
-    takePicture();
     ev.preventDefault();
+    takePicture();
+}
+
+
+function onClear(ev) {
+    ev.preventDefault();
+    clearPhoto();
 }
 
 
@@ -67,8 +74,9 @@ function clearPhoto() {
     context.fillStyle = "#aaaaaa";
     context.fillRect(0, 0, canvasEl.value.width, canvasEl.value.height);
 
-    const data = canvasEl.value.toDataURL("image/png");
-    photoEl.value.setAttribute("src", data);
+    // const data = canvasEl.value.toDataURL("image/png");
+    // photoEl.value.setAttribute("src", data);
+    photos.length = 0;
 }
 
 function takePicture() {
@@ -80,7 +88,8 @@ function takePicture() {
         context.drawImage(videoEl.value, 0, 0, width, height);
 
         const data = canvasEl.value.toDataURL("image/png");
-        photoEl.value.setAttribute("src", data);
+        photos.push(data);
+        // photoEl.value.setAttribute("src", data);
     } else {
         clearPhoto();
     }
@@ -105,17 +114,21 @@ function takePicture() {
         <button id="start-button" @click="onCapture">
             Capture photo
         </button>
+
+        <button @click="onClear">
+            Clear
+        </button>
     </div>
 
-    <figure>
-        <img ref="photo" src="" alt="The screen capture will appear in this box." />
-    </figure>
+    <div>
+        <img v-for="photo of photos" ref="photo" :src="photo" />
+    </div>
 
     <canvas ref="canvas"></canvas>
 </template>
 
 <style scoped>
-video, img {
+video, figure {
     border: solid 1px gray;
 }
 
@@ -127,13 +140,18 @@ button {
     color: red;
 }
 
-/* canvas {
+canvas {
     display: none;
-} */
+}
 
 figure {
     margin: 0;
     padding: 0;
     margin-top: 1em;
+}
+
+img {
+    width: 10em;
+    height: auto;
 }
 </style>
