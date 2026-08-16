@@ -210,20 +210,18 @@ img {
     width: 3em;
     height: 3em;
     border-radius: 100%;
-    /* background: lightgray; */
     background: radial-gradient(circle at center, lightgray 0, darkgray 100%);
     outline: solid 2px lightgray;
     color: inherit;
-    transition: background-color 250ms, outline-color 250ms;
+    transition: transform 200ms;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.75);
     border: solid 2px #777;
+    transform: scale(1);
 }
 
 .capture-button-area button:active {
-    /* background: white; */
-    /* outline-color: gray; */
-    transition: background-color 0ms;
-    transform: scale(0.95);
+    transition: transform 0ms;
+    transform: scale(0.92);
     box-shadow: none;
 }
 
