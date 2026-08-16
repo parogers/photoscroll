@@ -5,10 +5,9 @@ import { onMounted, ref, reactive, useTemplateRef } from 'vue';
 const width = 320; // We will scale the photo width to this
 let height = 0; // This will be computed based on the input stream
 
-let streaming = false;
-
 const photos = reactive([]);
 const error = ref('');
+const streaming = ref(false);
 const videoEl = useTemplateRef('video');
 const photoEl = useTemplateRef('photo');
 const canvasEl = useTemplateRef('canvas');
@@ -16,21 +15,20 @@ const canvasEl = useTemplateRef('canvas');
 
 onMounted(() => {
     videoEl.value.addEventListener("canplay", (ev) => {
-        if (!streaming) {
+        if (!streaming.value) {
+            videoEl.value.play();
             height = videoEl.value.videoHeight / (videoEl.value.videoWidth / width);
             canvasEl.value.setAttribute("width", width);
             canvasEl.value.setAttribute("height", height);
-            streaming = true;
+            streaming.value = true;
         }
     });
-    onAllow();
+    // onAllow();
     clearPhoto();
 });
 
 
 function onCapture(ev) {
-    console.log('capture');
-    return;
     ev.preventDefault();
     takePicture();
 }
@@ -43,26 +41,21 @@ function onClear(ev) {
 
 
 function onAllow() {
-    videoEl.value.src = '/sample.mp4';
-    videoEl.value.muted = true;
-    videoEl.value.play();
-    return;
-
     navigator.mediaDevices
         .getUserMedia({ video: true, audio: false })
         .then((stream) => {
             videoEl.value.srcObject = stream;
-            videoEl.value.play();
+            // videoEl.value.play();
         })
         .catch((err) => {
             if (err.name === 'NotFoundError') {
                 videoEl.value.src = '/sample.mp4';
                 videoEl.value.muted = true;
-                videoEl.value.play();
+                // videoEl.value.play();
                 return;
             }
-            console.error('An error occurred:', err);
-            error.value = err;
+            console.error('Failed to enable video:', err);
+            error.value = 'Failed to enable video: ' + err;
         });
 }
 
@@ -91,25 +84,36 @@ function takePicture() {
         context.drawImage(videoEl.value, 0, 0, width, height);
 
         const data = canvasEl.value.toDataURL("image/png");
-        photos.push(data);
-
-        canvasEl.value.toBlob(blob => {
-            console.log(blob);
-            uploadPhoto(blob);
-        })
-
-        // uploadPhoto(data);
+        uploadPhoto(data);
     } else {
         clearPhoto();
     }
 }
 
 
-async function uploadPhoto(data)
+async function onUploadPhotos() {
+    const form = new FormData();
+    for (let photo of photos) {
+        const blob = await (await fetch(photo)).blob();
+        form.append('files', new File([blob], 'photo.png'));
+    }
+    const response = await fetch(
+        'http://192.168.100.119:8000/upload',
+        {
+            method: 'POST',
+            body: form,
+        },
+    );
+    clearPhoto();
+}
+
+
+async function uploadPhoto(dataURL)
 {
     try {
         const form = new FormData();
-        form.append('file', new File([data], 'photo.png'));
+        const blob = await (await fetch(dataURL)).blob();
+        form.append('files', new File([blob], 'photo.png'));
         const response = await fetch(
             'http://192.168.100.119:8000/upload',
             {
@@ -133,12 +137,15 @@ async function uploadPhoto(data)
 
     <div class="video-area">
         <video ref="video">Video stream not available.</video>
-        <div class="capture-button-area">
+        <div v-if="streaming" class="capture-button-area">
             <button @click="onCapture">
             </button>
-            <!-- <button id="permissions-button" @click="onAllow">
+        </div>
+
+        <div v-if="!streaming" class="allow-button-area">
+            <button @click="onAllow">
                 Allow camera
-            </button> -->
+            </button>
         </div>
     </div>
 
@@ -168,7 +175,20 @@ button {
 }
 
 .error {
-    color: red;
+    font-size: smaller;
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    height: 1.5em;
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0.5em;
+    justify-content: center;
+    background: darkred;
+    color: white;
+    font-weight: bold;
 }
 
 canvas {
@@ -250,6 +270,21 @@ img {
     border-radius: 100%;
     transform: scale(1);
     transition: transform 0ms;
+}
+
+.allow-button-area {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.allow-button-area button {
+    padding: 1em;
 }
 
 </style>
