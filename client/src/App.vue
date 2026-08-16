@@ -15,24 +15,22 @@ const canvasEl = useTemplateRef('canvas');
 
 
 onMounted(() => {
-    const startButton = document.getElementById("start-button");
-    const allowButton = document.getElementById("permissions-button");
     videoEl.value.addEventListener("canplay", (ev) => {
         if (!streaming) {
             height = videoEl.value.videoHeight / (videoEl.value.videoWidth / width);
-
-            videoEl.value.setAttribute("width", width);
-            videoEl.value.setAttribute("height", height);
             canvasEl.value.setAttribute("width", width);
             canvasEl.value.setAttribute("height", height);
             streaming = true;
         }
     });
+    onAllow();
     clearPhoto();
 });
 
 
 function onCapture(ev) {
+    console.log('capture');
+    return;
     ev.preventDefault();
     takePicture();
 }
@@ -45,6 +43,11 @@ function onClear(ev) {
 
 
 function onAllow() {
+    videoEl.value.src = '/sample.mp4';
+    videoEl.value.muted = true;
+    videoEl.value.play();
+    return;
+
     navigator.mediaDevices
         .getUserMedia({ video: true, audio: false })
         .then((stream) => {
@@ -128,21 +131,15 @@ async function uploadPhoto(data)
         Media devices API not supported
     </p>
 
-    <div>
-        <button id="permissions-button" @click="onAllow">
-            Allow camera
-        </button>
-    </div>
-
-    <video ref="video">Video stream not available.</video>
-    <div>
-        <button id="start-button" @click="onCapture">
-            Capture photo
-        </button>
-
-        <button @click="onClear">
-            Clear
-        </button>
+    <div class="video-area">
+        <video ref="video">Video stream not available.</video>
+        <div class="capture-button-area">
+            <button @click="onCapture">
+            </button>
+            <!-- <button id="permissions-button" @click="onAllow">
+                Allow camera
+            </button> -->
+        </div>
     </div>
 
     <div>
@@ -153,8 +150,17 @@ async function uploadPhoto(data)
 </template>
 
 <style scoped>
-video, figure {
+body {
+    background: white;
+}
+
+figure {
     border: solid 1px gray;
+}
+
+video {
+    width: 100%;
+    height: auto;
 }
 
 button {
@@ -179,4 +185,73 @@ img {
     width: 10em;
     height: auto;
 }
+
+.video-area {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: lightgray;
+    overflow: hidden;
+}
+
+.capture-button-area {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 1.25em;
+    text-align: center;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.25) 50%, rgba(0, 0, 0, 0) 100%);
+}
+
+.capture-button-area button {
+    position: relative;
+    width: 3em;
+    height: 3em;
+    border-radius: 100%;
+    /* background: lightgray; */
+    background: radial-gradient(circle at center, lightgray 0, darkgray 100%);
+    outline: solid 2px lightgray;
+    color: inherit;
+    transition: background-color 250ms, outline-color 250ms;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.75);
+    border: solid 2px #777;
+}
+
+.capture-button-area button:active {
+    /* background: white; */
+    /* outline-color: gray; */
+    transition: background-color 0ms;
+    transform: scale(0.95);
+    box-shadow: none;
+}
+
+.capture-button-area button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(255, 255, 255, 0);
+    border-radius: 100%;
+    transform: scale(3);
+    transition: transform 250ms, background-color 250ms;
+}
+
+
+.capture-button-area button:active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(255, 255, 255, 0.25);
+    border-radius: 100%;
+    transform: scale(1);
+    transition: transform 0ms;
+}
+
 </style>
