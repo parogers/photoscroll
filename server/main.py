@@ -1,40 +1,26 @@
 
+import base64
 import os
 import asyncio
 from contextlib import asynccontextmanager
 import subprocess
 from typing import Annotated
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from job_manager import JobManager
 
 
-async def worker(queue):
-    print('starting worker...')
-    while True:
-        job_dir = await queue.get()
-        try:
-            images = [
-                os.path.join(job_dir, fname)
-                for fname in os.listdir(job_dir)
-            ]
-            subprocess.run([
-                './print_scroll.sh',
-            ] + images)
-        except Exception as exc:
-            print('worker exception', exc)
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    task = asyncio.create_task(worker(job_manager.queue))
+    # task = asyncio.create_task(worker(job_manager.queue))
     yield
-    task.cancel()
+    # task.cancel()
+    job_manager.queue.shutdown()
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
@@ -55,3 +41,33 @@ async def index():
 async def hello(files: list[UploadFile]):
     await job_manager.submit(files)
     return ''
+
+
+@app.websocket('/ws/')
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    print('websocket connected')
+    while True:
+        try:
+            job_dir = await asyncio.wait_for(
+                job_manager.queue.get(),
+                timeout=1,
+            )
+            await websocket.send_text(job_dir)
+            for fname in os.listdir(job_dir):
+                img_data = open(os.path.join(job_dir, fname), 'rb').read()
+                await websocket.send_text(
+                    base64.encodebytes(img_data).decode('utf-8')
+                )
+            await websocket.send_text('\n')
+
+        except asyncio.TimeoutError:
+            try:
+                await websocket.send_text('')
+            except WebSocketDisconnect:
+                break
+            continue
+
+        except WebSocketDisconnect:
+            break
+    print('websocket disconnected')
