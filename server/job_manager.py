@@ -1,4 +1,5 @@
 
+import asyncio
 import time
 import os
 import aiofiles
@@ -32,3 +33,13 @@ class JobManager:
             path = os.path.join(base_dir, f'photo{n:04d}.png')
             await stream_file(file, path)
         await self.queue.put(base_dir)
+
+    async def get_job(self, timeout=None):
+        if timeout is None:
+            return await self.queue.get()
+
+        job = await asyncio.wait_for(
+            self.queue.get(),
+            timeout=timeout,
+        )
+        return job

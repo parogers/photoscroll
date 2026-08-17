@@ -1,4 +1,5 @@
 
+import glob
 import base64
 import os
 import asyncio
@@ -14,9 +15,7 @@ from job_manager import JobManager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # task = asyncio.create_task(worker(job_manager.queue))
     yield
-    # task.cancel()
     job_manager.queue.shutdown()
 
 
@@ -49,13 +48,10 @@ async def websocket_endpoint(websocket: WebSocket):
     print('websocket connected')
     while True:
         try:
-            job_dir = await asyncio.wait_for(
-                job_manager.queue.get(),
-                timeout=1,
-            )
+            job_dir = await job_manager.get_job(timeout=1)
             await websocket.send_text(job_dir)
-            for fname in os.listdir(job_dir):
-                img_data = open(os.path.join(job_dir, fname), 'rb').read()
+            for img_src in glob.glob(os.path.join(job_dir, '*.png')):
+                img_data = open(img_src, 'rb').read()
                 await websocket.send_text(
                     base64.encodebytes(img_data).decode('utf-8')
                 )
