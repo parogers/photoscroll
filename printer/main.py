@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+import tempfile
+import io
+import PIL, PIL.Image
 import subprocess
 import base64
 from urllib.parse import urlparse
@@ -15,7 +18,8 @@ from websockets.exceptions import (
     InvalidMessage,
     InvalidStatus,
 )
-from serial import SerialException
+
+from make_strip import make_strip
 
 
 def make_ws_url(server_url):
@@ -35,6 +39,10 @@ def make_ws_url(server_url):
     return url
 
 
+def parse_image(data):
+    return PIL.Image.open(io.BytesIO(base64.b64decode(data)))
+
+
 async def serve(server_url):
     with connect(make_ws_url(server_url)) as websocket:
         print('Connected')
@@ -43,25 +51,27 @@ async def serve(server_url):
             if not job_marker:
                 # Must be a ping
                 continue
-            print(job_marker)
             # List of base64 encoded images
+            print(job_marker)
             images = []
             while True:
                 img_data = websocket.recv().strip()
                 if not img_data:
                     break;
-                print('=>', img_data)
-
-                with open('photo.png', 'wb') as file:
-                    file.write(base64.b64decode(img_data))
-
-                subprocess.run([
-                    './print_scroll.sh',
-                    'photo.png',
-                ])
-
+                print('=>', len(img_data), 'bytes')
+                images.append(parse_image(img_data))
             print('=> (done)')
             print()
+
+            print('Printing...')
+            strip_img = make_strip(images)
+            with tempfile.NamedTemporaryFile(suffix='.png') as file:
+                strip_img.save(file.name)
+                subprocess.run([
+                    './print_scroll.sh',
+                    file.name,
+                ])
+            print('Done')
 
 
 async def main():

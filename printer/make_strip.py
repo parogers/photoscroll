@@ -11,7 +11,12 @@ DEFAULT_GUTTER = 10
 DEFAULT_MARGIN = 25
 
 
-def make_strip(images, margin, gutter, width):
+def make_strip(
+    images,
+    margin=DEFAULT_MARGIN,
+    gutter=DEFAULT_GUTTER,
+    width=DEFAULT_WIDTH,
+):
     images = resize_images(images, width)
     total_width = width + 2*margin
     total_height = sum([
