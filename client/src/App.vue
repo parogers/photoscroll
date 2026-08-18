@@ -9,34 +9,26 @@ const photos = reactive([]);
 const error = ref('');
 const streaming = ref(false);
 const videoEl = useTemplateRef('video');
-const photoEl = useTemplateRef('photo');
 const canvasEl = useTemplateRef('canvas');
 
 
 onMounted(() => {
-    videoEl.value.addEventListener("canplay", (ev) => {
+    videoEl.value!.addEventListener("canplay", () => {
         if (!streaming.value) {
-            videoEl.value.play();
-            height = videoEl.value.videoHeight / (videoEl.value.videoWidth / width);
-            canvasEl.value.setAttribute("width", width);
-            canvasEl.value.setAttribute("height", height);
+            videoEl.value!.play();
+            height = videoEl.value!.videoHeight / (videoEl.value!.videoWidth / width);
+            canvasEl.value!.setAttribute("width", ''+width);
+            canvasEl.value!.setAttribute("height", ''+height);
             streaming.value = true;
         }
     });
-    // onAllow();
     clearPhoto();
 });
 
 
-function onCapture(ev) {
+function onCapture(ev: any) {
     ev.preventDefault();
     takePicture();
-}
-
-
-function onClear(ev) {
-    ev.preventDefault();
-    clearPhoto();
 }
 
 
@@ -44,13 +36,13 @@ function onAllow() {
     navigator.mediaDevices
         .getUserMedia({ video: true, audio: false })
         .then((stream) => {
-            videoEl.value.srcObject = stream;
+            videoEl.value!.srcObject = stream;
             // videoEl.value.play();
         })
         .catch((err) => {
             if (err.name === 'NotFoundError') {
-                videoEl.value.src = '/sample.mp4';
-                videoEl.value.muted = true;
+                videoEl.value!.src = '/sample.mp4';
+                videoEl.value!.muted = true;
                 // videoEl.value.play();
                 return;
             }
@@ -66,24 +58,23 @@ function hasGetUserMedia(): boolean {
 
 
 function clearPhoto() {
-    const context = canvasEl.value.getContext("2d");
-    context.fillStyle = "#aaaaaa";
-    context.fillRect(0, 0, canvasEl.value.width, canvasEl.value.height);
-
-    // const data = canvasEl.value.toDataURL("image/png");
-    // photoEl.value.setAttribute("src", data);
+    const context = canvasEl.value!.getContext("2d");
+    if (context) {
+        context.fillStyle = "#aaaaaa";
+        context.fillRect(0, 0, canvasEl.value!.width, canvasEl.value!.height);
+    }
     photos.length = 0;
 }
 
 function takePicture() {
-    const context = canvasEl.value.getContext("2d");
-    if (width && height) {
-        canvasEl.value.width = width;
-        canvasEl.value.height = height;
+    const context = canvasEl.value!.getContext("2d");
+    if (context && width && height && videoEl.value) {
+        canvasEl.value!.width = width;
+        canvasEl.value!.height = height;
         context.filter = 'none';
         context.drawImage(videoEl.value, 0, 0, width, height);
 
-        const data = canvasEl.value.toDataURL("image/png");
+        const data = canvasEl.value!.toDataURL("image/png");
         uploadPhoto(data);
     } else {
         clearPhoto();
@@ -91,37 +82,36 @@ function takePicture() {
 }
 
 
-async function onUploadPhotos() {
-    const form = new FormData();
-    for (let photo of photos) {
-        const blob = await (await fetch(photo)).blob();
-        form.append('files', new File([blob], 'photo.png'));
-    }
-    const response = await fetch(
-        'http://192.168.100.119:8000/upload',
-        {
-            method: 'POST',
-            body: form,
-        },
-    );
-    clearPhoto();
-}
+// async function onUploadPhotos() {
+//     const form = new FormData();
+//     for (let photo of photos) {
+//         const blob = await (await fetch(photo)).blob();
+//         form.append('files', new File([blob], 'photo.png'));
+//     }
+//     const response = await fetch(
+//         'http://192.168.100.119:8000/upload',
+//         {
+//             method: 'POST',
+//             body: form,
+//         },
+//     );
+//     clearPhoto();
+// }
 
 
-async function uploadPhoto(dataURL)
+async function uploadPhoto(dataURL: string)
 {
     try {
         const form = new FormData();
         const blob = await (await fetch(dataURL)).blob();
         form.append('files', new File([blob], 'photo.png'));
-        const response = await fetch(
+        await fetch(
             'http://192.168.100.119:8000/upload',
             {
                 method: 'POST',
                 body: form,
             },
         );
-        console.log(response);
     } catch(error) {
         alert(error);
     }
