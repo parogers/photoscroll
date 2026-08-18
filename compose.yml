@@ -1,0 +1,15 @@
+
+services:
+  api:
+    build:
+        dockerfile: docker/api/Dockerfile
+        context: .
+    environment:
+      - TESTING=test123
+
+  nginx:
+    build:
+        dockerfile: docker/nginx/Dockerfile
+        context: .
+    ports:
+      - "8000:80"

@@ -39,7 +39,7 @@ async def hello(files: list[UploadFile]):
     return ''
 
 
-@app.websocket('/ws/')
+@app.websocket('/ws')
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     print('websocket connected')

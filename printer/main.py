@@ -32,10 +32,12 @@ def make_ws_url(server_url):
     else:
         raise Exception(f'unknown scheme: {server_url}')
 
-    url = f'{ws_scheme}://{parsed.netloc}/{parsed.path}'
+    url = f'{ws_scheme}://{parsed.netloc}'
+    if parsed.path != '/':
+        url += parsed.path
     if not url.endswith('/'):
         url += '/'
-    url += 'ws/'
+    url += 'ws'
     return url
 
 
@@ -44,7 +46,9 @@ def parse_image(data):
 
 
 async def serve(server_url):
-    with connect(make_ws_url(server_url)) as websocket:
+    websocket_url = make_ws_url(server_url)
+    print('Connecting to server:', websocket_url)
+    with connect(websocket_url) as websocket:
         print('Connected')
         while True:
             job_marker = websocket.recv()
@@ -82,6 +86,7 @@ async def main():
         nargs=1,
         required=False,
         default=['http://localhost:8000'],
+        help='URL base for the API server',
     )
     args = parser.parse_args(sys.argv[1:])
     url = args.url[0]

@@ -99,6 +99,14 @@ function takePicture() {
 // }
 
 
+function getServerUploadUrl(): string {
+    if (import.meta.env.MODE === 'development') {
+        return 'http://localhost:8000/upload';
+    }
+    return '/api/upload';
+}
+
+
 async function uploadPhoto(dataURL: string)
 {
     try {
@@ -106,7 +114,7 @@ async function uploadPhoto(dataURL: string)
         const blob = await (await fetch(dataURL)).blob();
         form.append('files', new File([blob], 'photo.png'));
         await fetch(
-            'http://192.168.100.119:8000/upload',
+            getServerUploadUrl(),
             {
                 method: 'POST',
                 body: form,
