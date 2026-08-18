@@ -1,11 +1,8 @@
 
-import glob
 import base64
 import os
 import asyncio
 from contextlib import asynccontextmanager
-import subprocess
-from typing import Annotated
 from fastapi import FastAPI, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -48,14 +45,14 @@ async def websocket_endpoint(websocket: WebSocket):
     print('websocket connected')
     while True:
         try:
-            job_dir = await job_manager.get_job(timeout=1)
-            await websocket.send_text(job_dir)
-            for img_src in glob.glob(os.path.join(job_dir, '*.png')):
-                img_data = open(img_src, 'rb').read()
-                await websocket.send_text(
-                    base64.encodebytes(img_data).decode('utf-8')
-                )
-            await websocket.send_text('\n')
+            async with job_manager.get_job(timeout=1) as job:
+                await websocket.send_text(job.job_dir)
+                for img_src in job.images:
+                    img_data = open(img_src, 'rb').read()
+                    await websocket.send_text(
+                        base64.encodebytes(img_data).decode('utf-8')
+                    )
+                await websocket.send_text('\n')
 
         except asyncio.TimeoutError:
             try:
