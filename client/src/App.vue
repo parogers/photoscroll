@@ -41,7 +41,7 @@ function onAllow() {
         })
         .catch((err) => {
             if (err.name === 'NotFoundError') {
-                videoEl.value!.src = '/sample.mp4';
+                videoEl.value!.src = './sample.mp4';
                 videoEl.value!.muted = true;
                 // videoEl.value.play();
                 return;
@@ -103,7 +103,7 @@ function getServerUploadUrl(): string {
     if (import.meta.env.MODE === 'development') {
         return 'http://localhost:8000/upload';
     }
-    return '/api/upload';
+    return './api/upload';
 }
 
 
