@@ -10,6 +10,7 @@ const error = ref('');
 const streaming = ref(false);
 const videoEl = useTemplateRef('video');
 const canvasEl = useTemplateRef('canvas');
+const flipX = ref(true);
 
 
 onMounted(() => {
@@ -69,11 +70,12 @@ function clearPhoto() {
 function takePicture() {
     const context = canvasEl.value!.getContext("2d");
     if (context && width && height && videoEl.value) {
+        const scaleX = flipX.value ? -1 : 1;
         canvasEl.value!.width = width;
         canvasEl.value!.height = height;
         context.filter = 'none';
-        context.drawImage(videoEl.value, 0, 0, width, height);
-
+        context.scale(scaleX, 1);
+        context.drawImage(videoEl.value, 0, 0, scaleX*width, height);
         const data = canvasEl.value!.toDataURL("image/png");
         uploadPhoto(data);
     } else {
@@ -134,7 +136,7 @@ async function uploadPhoto(dataURL: string)
     </p>
 
     <div class="video-area">
-        <video ref="video">Video stream not available.</video>
+        <video ref="video" :class="{ flipx: flipX }">Video stream not available.</video>
         <div v-if="streaming" class="capture-button-area">
             <button @click="onCapture">
             </button>
@@ -164,8 +166,14 @@ figure {
 }
 
 video {
+    display: block;
     width: 100%;
     height: auto;
+    max-height: 100%;
+}
+
+video.flipx {
+    transform: scaleX(-1);
 }
 
 button {
@@ -205,11 +213,12 @@ img {
 }
 
 .video-area {
+    display: flex;
     height: 100dvh;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    background: lightgray;
+    background: black;
     overflow: hidden;
 }
 
