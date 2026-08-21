@@ -35,7 +35,6 @@ function onCapture(ev: any) {
 
 function onToggleFacing() {
     facingUser.value = !facingUser.value;
-    flipX.value = facingUser.value;
     onAllow();
 }
 
@@ -49,6 +48,13 @@ function onAllow() {
             audio: false,
          })
         .then((stream) => {
+            const streams = stream.getVideoTracks();
+            if (streams.length) {
+                const constraints = streams[0].getConstraints();
+                flipX.value = constraints.facingMode === 'user';
+            } else {
+                flipX.value = false;
+            }
             videoEl.value!.srcObject = stream;
             videoEl.value!.play();
         })
