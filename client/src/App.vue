@@ -10,6 +10,7 @@ const error = ref('');
 const streaming = ref(false);
 const videoEl = useTemplateRef('video');
 const canvasEl = useTemplateRef('canvas');
+const facingUser = ref(true);
 const flipX = ref(true);
 
 
@@ -33,22 +34,36 @@ function onCapture(ev: any) {
 }
 
 
+function toggleFacing() {
+    facingUser.value = !facingUser.value;
+    onAllow();
+}
+
+
 function onAllow() {
     navigator.mediaDevices
-        .getUserMedia({ video: true, audio: false })
+        .getUserMedia({
+            video: {
+                facingMode: facingUser.value ? 'user' : 'environment',
+            },
+            audio: false,
+         })
         .then((stream) => {
             videoEl.value!.srcObject = stream;
-            // videoEl.value.play();
         })
         .catch((err) => {
-            if (err.name === 'NotFoundError') {
+            if (err.name === 'NotFoundError' && isModeDevelopment()) {
+                // Fallback for testing
                 videoEl.value!.src = './sample.mp4';
                 videoEl.value!.muted = true;
-                // videoEl.value.play();
                 return;
             }
             console.error('Failed to enable video:', err);
-            error.value = 'Failed to enable video: ' + err;
+            if (err.name === 'NotFoundError') {
+                error.value = 'Camera not found';
+            } else {
+                error.value = 'Failed to enable video: ' + err;
+            }
         });
 }
 
@@ -101,8 +116,13 @@ function takePicture() {
 // }
 
 
+function isModeDevelopment(): boolean {
+    return import.meta.env.MODE === 'development';
+}
+
+
 function getServerUploadUrl(): string {
-    if (import.meta.env.MODE === 'development') {
+    if (isModeDevelopment()) {
         return 'http://localhost:8000/upload';
     }
     return './api/upload';
@@ -138,7 +158,13 @@ async function uploadPhoto(dataURL: string)
     <div class="video-area">
         <video ref="video" :class="{ flipx: flipX }">Video stream not available.</video>
         <div v-if="streaming" class="capture-button-area">
-            <button @click="onCapture">
+            <div></div>
+
+            <button @click="onCapture" class="capture">
+            </button>
+
+            <button @click="onToggleFacing" class="flip">
+                &hookleftarrow;
             </button>
         </div>
 
@@ -174,10 +200,6 @@ video {
 
 video.flipx {
     transform: scaleX(-1);
-}
-
-button {
-    font-size: x-large;
 }
 
 .error {
@@ -230,29 +252,34 @@ img {
     padding: 1.25em;
     text-align: center;
     background: linear-gradient(to top, rgba(0, 0, 0, 0.25) 50%, rgba(0, 0, 0, 0) 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1em;
 }
 
-.capture-button-area button {
+.capture-button-area button.capture {
     position: relative;
     width: 3em;
     height: 3em;
     border-radius: 100%;
-    background: radial-gradient(circle at center, lightgray 0, darkgray 100%);
+    background: radial-gradient(circle at center, white 0, lightgray 100%);
     outline: solid 2px lightgray;
     color: inherit;
     transition: transform 200ms;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.75);
     border: solid 2px #777;
     transform: scale(1);
+    font-size: x-large;
 }
 
-.capture-button-area button:active {
+.capture-button-area button.capture:active {
     transition: transform 0ms;
     transform: scale(0.92);
     box-shadow: none;
 }
 
-.capture-button-area button::before {
+.capture-button-area button.capture::before {
     content: '';
     position: absolute;
     top: 0;
@@ -263,10 +290,11 @@ img {
     border-radius: 100%;
     transform: scale(3);
     transition: transform 250ms, background-color 250ms;
+    pointer-events: none;
 }
 
 
-.capture-button-area button:active::before {
+.capture-button-area button.capture:active::before {
     content: '';
     position: absolute;
     top: 0;
@@ -277,6 +305,28 @@ img {
     border-radius: 100%;
     transform: scale(1);
     transition: transform 0ms;
+}
+
+.capture-button-area div, .capture-button-area .flip {
+    width: 2em;
+}
+
+button.flip {
+    aspect-ratio: 1;
+    border-radius: 100%;
+    border: none;
+    padding: 0;
+    margin: 0;
+    background: lightgray;
+    font-size: larger;
+    /* color: inherit; */
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.75);
+}
+
+button.flip:active {
+    background: #eee;
+    transform: scale(0.95);
+    box-shadow: none;
 }
 
 .allow-button-area {
