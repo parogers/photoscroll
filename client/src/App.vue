@@ -35,6 +35,7 @@ function onCapture(ev: any) {
 
 function onToggleFacing() {
     facingUser.value = !facingUser.value;
+    flipX.value = facingUser.value;
     onAllow();
 }
 
