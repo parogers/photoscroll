@@ -17,7 +17,6 @@ const flipX = ref(true);
 onMounted(() => {
     videoEl.value!.addEventListener("canplay", () => {
         if (!streaming.value) {
-            videoEl.value!.play();
             height = videoEl.value!.videoHeight / (videoEl.value!.videoWidth / width);
             canvasEl.value!.setAttribute("width", ''+width);
             canvasEl.value!.setAttribute("height", ''+height);
@@ -50,12 +49,14 @@ function onAllow() {
          })
         .then((stream) => {
             videoEl.value!.srcObject = stream;
+            videoEl.value!.play();
         })
         .catch((err) => {
             if (err.name === 'NotFoundError' && isModeDevelopment()) {
                 // Fallback for testing
                 videoEl.value!.src = './sample.mp4';
                 videoEl.value!.muted = true;
+                videoEl.value!.play();
                 return;
             }
             console.error('Failed to enable video:', err);
