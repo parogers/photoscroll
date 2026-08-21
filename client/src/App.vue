@@ -34,7 +34,7 @@ function onCapture(ev: any) {
 }
 
 
-function toggleFacing() {
+function onToggleFacing() {
     facingUser.value = !facingUser.value;
     onAllow();
 }
