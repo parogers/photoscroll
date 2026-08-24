@@ -2,10 +2,6 @@
 
 import { onMounted, ref, reactive, useTemplateRef } from 'vue';
 
-const width = 320; // We will scale the photo width to this
-let height = 0; // This will be computed based on the input stream
-
-const photos = reactive([]);
 const error = ref('');
 const streaming = ref(false);
 const videoEl = useTemplateRef('video');
@@ -17,13 +13,9 @@ const flipX = ref(true);
 onMounted(() => {
     videoEl.value!.addEventListener("canplay", () => {
         if (!streaming.value) {
-            height = videoEl.value!.videoHeight / (videoEl.value!.videoWidth / width);
-            canvasEl.value!.setAttribute("width", ''+width);
-            canvasEl.value!.setAttribute("height", ''+height);
             streaming.value = true;
         }
     });
-    clearPhoto();
 });
 
 
@@ -81,47 +73,22 @@ function hasGetUserMedia(): boolean {
 }
 
 
-function clearPhoto() {
-    const context = canvasEl.value!.getContext("2d");
-    if (context) {
-        context.fillStyle = "#aaaaaa";
-        context.fillRect(0, 0, canvasEl.value!.width, canvasEl.value!.height);
-    }
-    photos.length = 0;
-}
-
 function takePicture() {
+    const width = videoEl.value!.videoWidth;
+    const height = videoEl.value!.videoHeight;
     const context = canvasEl.value!.getContext("2d");
-    if (context && width && height && videoEl.value) {
-        const scaleX = flipX.value ? -1 : 1;
-        canvasEl.value!.width = width;
-        canvasEl.value!.height = height;
-        context.filter = 'none';
-        context.scale(scaleX, 1);
-        context.drawImage(videoEl.value, 0, 0, scaleX*width, height);
-        const data = canvasEl.value!.toDataURL("image/png");
-        uploadPhoto(data);
-    } else {
-        clearPhoto();
+    if (!(context && width && height)) {
+        return;
     }
+    const scaleX = flipX.value ? -1 : 1;
+    canvasEl.value!.width = width;
+    canvasEl.value!.height = height;
+    context.filter = 'none';
+    context.scale(scaleX, 1);
+    context.drawImage(videoEl.value, 0, 0, scaleX*width, height);
+    const data = canvasEl.value!.toDataURL("image/png");
+    uploadPhoto(data);
 }
-
-
-// async function onUploadPhotos() {
-//     const form = new FormData();
-//     for (let photo of photos) {
-//         const blob = await (await fetch(photo)).blob();
-//         form.append('files', new File([blob], 'photo.png'));
-//     }
-//     const response = await fetch(
-//         'http://192.168.100.119:8000/upload',
-//         {
-//             method: 'POST',
-//             body: form,
-//         },
-//     );
-//     clearPhoto();
-// }
 
 
 function isModeDevelopment(): boolean {
@@ -183,10 +150,6 @@ async function uploadPhoto(dataURL: string)
         </div>
     </div>
 
-    <div>
-        <img v-for="photo of photos" ref="photo" :src="photo" />
-    </div>
-
     <canvas ref="canvas"></canvas>
 </template>
 
@@ -228,7 +191,7 @@ video.flipx {
 }
 
 canvas {
-    display: none;
+    /* display: none; */
 }
 
 figure {
