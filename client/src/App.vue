@@ -11,6 +11,7 @@ import {
 const MAX_FRAME_WIDTH = 160;
 
 
+const version = ref<string>(import.meta.env.APP_VERSION);
 const error = ref('');
 const streaming = ref(false);
 const videoEl = useTemplateRef('video');
@@ -187,6 +188,10 @@ async function uploadPhoto(dataURL: string)
             <button @click="onAllow">
                 Allow camera
             </button>
+        </div>
+
+        <div class="version">
+            v{{ version }}
         </div>
     </div>
 
@@ -365,4 +370,10 @@ video.capturing {
     transition: opacity 0s;
 }
 
+.version {
+    position: absolute;
+    bottom: 0.25em;
+    right: 0.25em;
+    color: gray;
+}
 </style>
