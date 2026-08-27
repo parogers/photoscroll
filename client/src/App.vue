@@ -32,9 +32,11 @@ onMounted(() => {
 async function onCapture(ev: any) {
     ev.preventDefault();
     capturing.value = true;
+    videoEl.value!.pause();
     await takePicture();
     await nextTick();
     await new Promise(resolve => setTimeout(resolve, 0));
+    videoEl.value!.play();
     capturing.value = false;
 }
 
