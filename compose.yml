@@ -12,4 +12,4 @@ services:
         dockerfile: docker/nginx/Dockerfile
         context: .
     ports:
-      - "8000:80"
+      - "127.0.0.1:${APP_PORT?must be defined}:80"
