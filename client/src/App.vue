@@ -1,6 +1,12 @@
 <script setup lang="ts">
 
-import { onMounted, ref, reactive, useTemplateRef } from 'vue';
+import {
+    onMounted,
+    ref,
+    reactive,
+    useTemplateRef,
+    nextTick,
+} from 'vue';
 
 const error = ref('');
 const streaming = ref(false);
@@ -8,6 +14,7 @@ const videoEl = useTemplateRef('video');
 const canvasEl = useTemplateRef('canvas');
 const facingUser = ref(true);
 const flipX = ref(true);
+const capturing = ref(false);
 
 
 onMounted(() => {
@@ -19,9 +26,13 @@ onMounted(() => {
 });
 
 
-function onCapture(ev: any) {
+async function onCapture(ev: any) {
     ev.preventDefault();
-    takePicture();
+    capturing.value = true;
+    await takePicture();
+    await nextTick();
+    await new Promise(setTimeout);
+    capturing.value = false;
 }
 
 
@@ -73,7 +84,7 @@ function hasGetUserMedia(): boolean {
 }
 
 
-function takePicture() {
+async function takePicture() {
     const width = videoEl.value!.videoWidth;
     const height = videoEl.value!.videoHeight;
     const context = canvasEl.value!.getContext("2d");
@@ -87,7 +98,7 @@ function takePicture() {
     context.scale(scaleX, 1);
     context.drawImage(videoEl.value, 0, 0, scaleX*width, height);
     const data = canvasEl.value!.toDataURL("image/png");
-    uploadPhoto(data);
+    await uploadPhoto(data);
 }
 
 
@@ -131,7 +142,11 @@ async function uploadPhoto(dataURL: string)
     </p>
 
     <div class="video-area">
-        <video ref="video" :class="{ flipx: flipX }">Video stream not available.</video>
+        <video
+            ref="video"
+            :class="{ flipx: flipX, capturing: capturing }">
+            Video stream not available
+        </video>
         <div v-if="streaming" class="capture-button-area">
             <div></div>
 
@@ -191,7 +206,7 @@ video.flipx {
 }
 
 canvas {
-    /* display: none; */
+    display: none;
 }
 
 figure {
@@ -313,6 +328,16 @@ button.flip:active {
 
 .allow-button-area button {
     padding: 1em;
+}
+
+video {
+    opacity: 1;
+    transition: opacity 200ms;
+}
+
+video.capturing {
+    opacity: 0.25;
+    transition: opacity 0s;
 }
 
 </style>
