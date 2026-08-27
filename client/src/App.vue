@@ -34,9 +34,10 @@ async function onCapture(ev: any) {
     ev.preventDefault();
     capturing.value = true;
     await nextTick();
-    await new Promise(resolve => setTimeout(resolve, 0));
-    await takePicture();
+    const imageURL = await takePicture();
     capturing.value = false;
+    await nextTick();
+    await uploadPhoto(imageURL);
 }
 
 
@@ -124,7 +125,7 @@ async function takePicture() {
     context.scale(scaleX, 1);
     context.drawImage(videoEl.value, 0, 0, scaleX*width, height);
     const data = canvasEl.value!.toDataURL("image/png");
-    await uploadPhoto(data);
+    return data;
 }
 
 
