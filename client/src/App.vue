@@ -3,7 +3,6 @@
 import {
     onMounted,
     ref,
-    reactive,
     useTemplateRef,
     nextTick,
 } from 'vue';
@@ -31,7 +30,7 @@ async function onCapture(ev: any) {
     capturing.value = true;
     await takePicture();
     await nextTick();
-    await new Promise(setTimeout);
+    await new Promise(resolve => setTimeout(resolve, 0));
     capturing.value = false;
 }
 
@@ -96,7 +95,7 @@ async function takePicture() {
     canvasEl.value!.height = height;
     context.filter = 'none';
     context.scale(scaleX, 1);
-    context.drawImage(videoEl.value, 0, 0, scaleX*width, height);
+    context.drawImage(videoEl.value!, 0, 0, scaleX*width, height);
     const data = canvasEl.value!.toDataURL("image/png");
     await uploadPhoto(data);
 }
