@@ -37,7 +37,9 @@ async function onCapture(ev: any) {
     const imageURL = await takePicture();
     capturing.value = false;
     await nextTick();
-    await uploadPhoto(imageURL);
+    if (imageURL) {
+        await uploadPhoto(imageURL);
+    }
 }
 
 
@@ -101,14 +103,14 @@ function getMaxFit(width: number, height: number): {
 }
 
 
-async function takePicture() {
+async function takePicture(): Promise<string> {
     if (
         !videoEl.value ||
         !canvasEl.value ||
         !videoEl.value.videoWidth ||
         !videoEl.value.videoHeight
     ) {
-        return;
+        return '';
     }
     const { width, height } = getMaxFit(
         videoEl.value.videoWidth,
@@ -116,7 +118,7 @@ async function takePicture() {
     );
     const context = canvasEl.value.getContext("2d");
     if (!context) {
-        return;
+        return '';
     }
     const scaleX = flipX.value ? -1 : 1;
     canvasEl.value.width = width;
