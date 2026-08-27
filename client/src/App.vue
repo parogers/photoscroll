@@ -7,6 +7,10 @@ import {
     nextTick,
 } from 'vue';
 
+
+const MAX_FRAME_WIDTH = 160;
+
+
 const error = ref('');
 const streaming = ref(false);
 const videoEl = useTemplateRef('video');
@@ -83,19 +87,41 @@ function hasGetUserMedia(): boolean {
 }
 
 
+function getMaxFit(width: number, height: number): {
+    width: number,
+    height: number,
+} {
+    const scale = MAX_FRAME_WIDTH/width;
+    return {
+        width: MAX_FRAME_WIDTH,
+        height: Math.round(height*scale)|0,
+    };
+}
+
+
 async function takePicture() {
-    const width = videoEl.value!.videoWidth;
-    const height = videoEl.value!.videoHeight;
-    const context = canvasEl.value!.getContext("2d");
-    if (!(context && width && height)) {
+    if (
+        !videoEl.value ||
+        !canvasEl.value ||
+        !videoEl.value.videoWidth ||
+        !videoEl.value.videoHeight
+    ) {
+        return;
+    }
+    const { width, height } = getMaxFit(
+        videoEl.value.videoWidth,
+        videoEl.value.videoHeight,
+    );
+    const context = canvasEl.value.getContext("2d");
+    if (!context) {
         return;
     }
     const scaleX = flipX.value ? -1 : 1;
-    canvasEl.value!.width = width;
-    canvasEl.value!.height = height;
-    context.filter = 'none';
+    canvasEl.value.width = width;
+    canvasEl.value.height = height;
+    context.filter = 'grayscale(1)';
     context.scale(scaleX, 1);
-    context.drawImage(videoEl.value!, 0, 0, scaleX*width, height);
+    context.drawImage(videoEl.value, 0, 0, scaleX*width, height);
     const data = canvasEl.value!.toDataURL("image/png");
     await uploadPhoto(data);
 }
