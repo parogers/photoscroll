@@ -4,8 +4,6 @@ services:
     build:
         dockerfile: docker/api/Dockerfile
         context: .
-    environment:
-      - TESTING=test123
 
   nginx:
     build:
