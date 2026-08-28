@@ -46,13 +46,15 @@ async def websocket_endpoint(websocket: WebSocket):
     while True:
         try:
             async with job_manager.get_job(timeout=1) as job:
-                await websocket.send_text(job.job_dir)
+                payload = {
+                    'job' : job.job_dir,
+                    'images' : [],
+                }
                 for img_src in job.images:
                     img_data = open(img_src, 'rb').read()
-                    await websocket.send_text(
-                        base64.encodebytes(img_data).decode('utf-8')
-                    )
-                await websocket.send_text('\n')
+                    img_encoded = base64.encodebytes(img_data).decode('utf-8')
+                    payload['images'].append(img_encoded)
+                await websocket.send_json(payload)
 
         except asyncio.TimeoutError:
             try:

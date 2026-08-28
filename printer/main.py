@@ -51,17 +51,15 @@ async def serve(server_url):
     with connect(websocket_url) as websocket:
         print('Connected')
         while True:
-            job_marker = websocket.recv()
-            if not job_marker:
+            payload_data = websocket.recv()
+            if not payload_data:
                 # Must be a ping
                 continue
-            # List of base64 encoded images
-            print(job_marker)
+
+            payload = json.loads(payload_data)
             images = []
-            while True:
-                img_data = websocket.recv().strip()
-                if not img_data:
-                    break;
+            print(payload['job'])
+            for img_data in payload['images']:
                 print('=>', len(img_data), 'bytes')
                 images.append(parse_image(img_data))
             print('=> (done)')
