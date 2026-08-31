@@ -22,6 +22,12 @@ from websockets.exceptions import (
 from make_strip import make_strip
 
 
+# See https://files.support.epson.com/pdf/pos/bulk/tm-t88v_hwum_en_02.pdf
+PRINTER_DPI = 180
+PAPER_WIDTH_MM_DEFAULT = 58
+MM_PER_IN = 25.4
+
+
 def make_ws_url(server_url):
     parsed = urlparse(server_url)
     ws_scheme = ''
@@ -45,7 +51,10 @@ def parse_image(data):
     return PIL.Image.open(io.BytesIO(base64.b64decode(data)))
 
 
-async def serve(server_url):
+async def serve(
+    server_url,
+    paper_width_mm=PAPER_WIDTH_MM_DEFAULT,
+):
     websocket_url = make_ws_url(server_url)
     print('Connecting to server:', websocket_url)
     with connect(websocket_url) as websocket:
@@ -66,9 +75,10 @@ async def serve(server_url):
             print()
 
             print('Printing...')
-            strip_img = make_strip(images)
+            paper_width_pixels = int(PRINTER_DPI*paper_width_mm/MM_PER_IN)
+            strip_img = make_strip(images, width=paper_width_pixels)
             with tempfile.NamedTemporaryFile(suffix='.png') as file:
-                strip_img.save(file.name)
+                strip_img.save(file.name, dpi=(PRINTER_DPI, PRINTER_DPI))
                 subprocess.run([
                     './print_scroll.sh',
                     file.name,
@@ -86,11 +96,23 @@ async def main():
         default=['http://localhost:8000'],
         help='URL base for the API server',
     )
+    parser.add_argument(
+        '--paper-width-mm',
+        type=float,
+        nargs=1,
+        required=False,
+        default=[PAPER_WIDTH_MM_DEFAULT],
+        help='Paper width in mm',
+    )
     args = parser.parse_args(sys.argv[1:])
     url = args.url[0]
+    paper_width_mm = args.paper_width_mm[0]
     while True:
         try:
-            await serve(url)
+            await serve(
+                url,
+                paper_width_mm=paper_width_mm,
+            )
         except (ConnectionClosedError, InvalidMessage, ConnectionError):
             print('Connection closed... re-connecting')
         except (ConnectionRefusedError, TimeoutError, InvalidStatus, socket.gaierror):

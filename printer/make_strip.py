@@ -17,14 +17,13 @@ def make_strip(
     gutter=DEFAULT_GUTTER,
     width=DEFAULT_WIDTH,
 ):
-    images = resize_images(images, width)
-    total_width = width + 2*margin
+    images = resize_images(images, width - 2*margin)
     total_height = sum([
         img.size[1]
         for img in images
     ]) + 2*margin + (len(images)-1) * gutter
 
-    output_img = PIL.Image.new('RGB', (total_width, total_height))
+    output_img = PIL.Image.new('RGB', (width, total_height))
     x = margin
     y = margin
     for img in images:
