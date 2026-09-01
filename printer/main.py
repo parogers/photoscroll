@@ -3,6 +3,7 @@
 import tempfile
 import io
 import PIL, PIL.Image
+from PIL import PSDraw
 import subprocess
 import base64
 from urllib.parse import urlparse
@@ -19,6 +20,7 @@ from websockets.exceptions import (
     InvalidStatus,
 )
 
+from ps_export import save_as_ps
 from make_strip import make_strip
 
 
@@ -51,6 +53,18 @@ def parse_image(data):
     return PIL.Image.open(io.BytesIO(base64.b64decode(data)))
 
 
+def print_image(img, dpi):
+    with tempfile.NamedTemporaryFile(suffix='.ps') as file:
+        save_as_ps(img, file.name, dpi=dpi)
+        subprocess.run([
+            'lp',
+            '-d', 'Epson-TM-T88V',
+            '-o', 'TmtPaperSource=DocNoFeedNoCut',
+            '-o', 'TmtPaperReduction=Both',
+            file.name,
+        ])
+
+
 async def serve(
     server_url,
     paper_width_mm=PAPER_WIDTH_MM_DEFAULT,
@@ -77,12 +91,7 @@ async def serve(
             print('Printing...')
             paper_width_pixels = int(PRINTER_DPI*paper_width_mm/MM_PER_IN)
             strip_img = make_strip(images, width=paper_width_pixels)
-            with tempfile.NamedTemporaryFile(suffix='.png') as file:
-                strip_img.save(file.name, dpi=(PRINTER_DPI, PRINTER_DPI))
-                subprocess.run([
-                    './print_scroll.sh',
-                    file.name,
-                ])
+            print_image(strip_img, dpi=PRINTER_DPI)
             print('Done')
 
 
