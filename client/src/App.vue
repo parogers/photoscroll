@@ -67,6 +67,7 @@ function onAllow() {
             }
             videoEl.value!.srcObject = stream;
             videoEl.value!.play();
+            error.value = '';
         })
         .catch((err) => {
             if (err.name === 'NotFoundError' && isModeDevelopment()) {
