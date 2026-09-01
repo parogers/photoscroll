@@ -49,41 +49,40 @@ function onToggleFacing() {
 }
 
 
-function onAllow() {
-    navigator.mediaDevices
-        .getUserMedia({
+async function onAllow() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
             video: {
                 facingMode: facingUser.value ? 'user' : 'environment',
             },
             audio: false,
-         })
-        .then((stream) => {
-            const streams = stream.getVideoTracks();
-            if (streams.length) {
-                const constraints = streams[0].getConstraints();
-                flipX.value = constraints.facingMode === 'user';
-            } else {
-                flipX.value = false;
-            }
-            videoEl.value!.srcObject = stream;
-            videoEl.value!.play();
-            error.value = '';
-        })
-        .catch((err) => {
-            if (err.name === 'NotFoundError' && isModeDevelopment()) {
-                // Fallback for testing
-                videoEl.value!.src = './sample.mp4';
-                videoEl.value!.muted = true;
-                videoEl.value!.play();
-                return;
-            }
-            console.error('Failed to enable video:', err);
-            if (err.name === 'NotFoundError') {
-                error.value = 'Camera not found';
-            } else {
-                error.value = 'Failed to enable video: ' + err;
-            }
         });
+        const streams = stream.getVideoTracks();
+        if (streams.length) {
+            const constraints = streams[0].getConstraints();
+            flipX.value = constraints.facingMode === 'user';
+        } else {
+            flipX.value = false;
+        }
+        videoEl.value!.srcObject = stream;
+        videoEl.value!.play();
+        error.value = '';
+
+    } catch(err: any) {
+        if (err.name === 'NotFoundError' && isModeDevelopment()) {
+            // Fallback for testing
+            videoEl.value!.src = './sample.mp4';
+            videoEl.value!.muted = true;
+            videoEl.value!.play();
+            return;
+        }
+        console.error('Failed to enable video:', err);
+        if (err.name === 'NotFoundError') {
+            error.value = 'Camera not found';
+        } else {
+            error.value = 'Failed to enable video: ' + err;
+        }
+    }
 }
 
 
