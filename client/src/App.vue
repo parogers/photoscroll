@@ -8,10 +8,12 @@ import {
 } from 'vue';
 
 
+const DISMISS_CAPTURE_PREVIEW_TIMEOUT = 1500;
 const MAX_FRAME_WIDTH = 160;
 const AUTO_ROTATE = false;
 
 
+let dismissCapturePreview = 0;
 const version = ref<string>(import.meta.env.APP_VERSION);
 const error = ref('');
 const streaming = ref(false);
@@ -59,17 +61,17 @@ async function onCapture(ev: any) {
     if (imageURL) {
         capturePreview.value = imageURL;
         capturePreviewHidden.value = false;
-        clearTimeout(dismissCapturePreview);
+        if (dismissCapturePreview) {
+            clearTimeout(dismissCapturePreview);
+            dismissCapturePreview = 0;
+        }
         await nextTick();
         await uploadPhoto(imageURL);
-        setTimeout(dismissCapturePreview, 1500);
+        dismissCapturePreview = setTimeout(async () => {
+            capturePreviewHidden.value = true;
+            await nextTick();
+        }, DISMISS_CAPTURE_PREVIEW_TIMEOUT);
     }
-}
-
-
-async function dismissCapturePreview() {
-    capturePreviewHidden.value = true;
-    await nextTick();
 }
 
 
