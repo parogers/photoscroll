@@ -1,7 +1,6 @@
 <script setup lang="ts">
 
 import {
-    onMounted,
     ref,
     useTemplateRef,
     nextTick,
@@ -21,13 +20,24 @@ const flipX = ref(true);
 const capturing = ref(false);
 
 
-onMounted(() => {
-    videoEl.value!.addEventListener("canplay", () => {
-        if (!streaming.value) {
-            streaming.value = true;
-        }
-    });
-});
+function onCanPlay() {
+    if (!streaming.value) {
+        streaming.value = true;
+    }
+}
+
+
+function onVideoError(err: any) {
+    error.value = 'Video error: ' + err;
+    console.error('Video error:', err);
+}
+
+
+function onVideoEnded() {
+    streaming.value = false;
+    capturing.value = false;
+    videoEl.value!.srcObject = null;
+}
 
 
 async function onCapture(ev: any) {
@@ -173,7 +183,11 @@ async function uploadPhoto(dataURL: string)
     <div class="video-area">
         <video
             ref="video"
-            :class="{ flipx: flipX, capturing: capturing }">
+            :class="{ flipx: flipX, capturing: capturing }"
+            @canplay="onCanPlay"
+            @error="onVideoError"
+            @ended="onVideoEnded"
+        >
             Video stream not available
         </video>
         <div v-if="streaming" class="capture-button-area">
@@ -361,6 +375,7 @@ button.flip:active {
 
 .allow-button-area button {
     padding: 1em;
+    font-size: larger;
 }
 
 video {
