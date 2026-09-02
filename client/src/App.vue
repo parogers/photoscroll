@@ -229,7 +229,7 @@ async function uploadPhoto(dataURL: string)
             </button>
 
             <button @click="onToggleFacing" class="flip">
-                &hookleftarrow;
+                <img src="/flip-camera.svg">
             </button>
         </div>
 
@@ -377,6 +377,9 @@ img {
 }
 
 button.flip {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     aspect-ratio: 1;
     border-radius: 100%;
     border: none;
@@ -384,8 +387,12 @@ button.flip {
     margin: 0;
     background: lightgray;
     font-size: larger;
-    /* color: inherit; */
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.75);
+}
+
+button.flip img {
+    width: 1.5em;
+    height: auto;
 }
 
 button.flip:active {
