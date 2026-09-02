@@ -1,7 +1,6 @@
 <script setup lang="ts">
 
 import {
-    onMounted,
     ref,
     useTemplateRef,
     nextTick,
@@ -24,11 +23,6 @@ const flipX = ref(true);
 const capturing = ref(false);
 const capturePreview = ref('');
 const capturePreviewHidden = ref(true);
-
-
-onMounted(async () => {
-    await onAllow();
-})
 
 
 function onCanPlay() {
