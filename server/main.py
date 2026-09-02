@@ -1,4 +1,5 @@
 
+from pathlib import Path
 import base64
 import os
 import asyncio
@@ -26,7 +27,8 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
-job_manager = JobManager()
+jobs_dir = os.path.join(str(Path.home()), 'photofax-jobs')
+job_manager = JobManager(jobs_dir)
 
 @app.get('/')
 async def index():

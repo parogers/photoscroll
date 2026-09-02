@@ -23,9 +23,9 @@ class Job:
 
 
 class JobManager:
-    def __init__(self):
+    def __init__(self, jobs_dir):
         self.queue = Queue()
-        self.job_dir = './jobs'
+        self.job_dir = jobs_dir
         self.job_id = int(time.time())
 
     def get_next_job_id(self):
