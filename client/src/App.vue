@@ -1,6 +1,7 @@
 <script setup lang="ts">
 
 import {
+    onMounted,
     ref,
     useTemplateRef,
     nextTick,
@@ -8,6 +9,7 @@ import {
 
 
 const MAX_FRAME_WIDTH = 160;
+const AUTO_ROTATE = false;
 
 
 const version = ref<string>(import.meta.env.APP_VERSION);
@@ -18,6 +20,13 @@ const canvasEl = useTemplateRef('canvas');
 const facingUser = ref(true);
 const flipX = ref(true);
 const capturing = ref(false);
+const capturePreview = ref('');
+const capturePreviewHidden = ref(true);
+
+
+onMounted(async () => {
+    await onAllow();
+})
 
 
 function onCanPlay() {
@@ -41,15 +50,26 @@ function onVideoEnded() {
 
 
 async function onCapture(ev: any) {
-    ev.preventDefault();
+    ev?.preventDefault();
     capturing.value = true;
     await nextTick();
     const imageURL = await takePicture();
     capturing.value = false;
     await nextTick();
     if (imageURL) {
+        capturePreview.value = imageURL;
+        capturePreviewHidden.value = false;
+        clearTimeout(dismissCapturePreview);
+        await nextTick();
         await uploadPhoto(imageURL);
+        setTimeout(dismissCapturePreview, 1500);
     }
+}
+
+
+async function dismissCapturePreview() {
+    capturePreviewHidden.value = true;
+    await nextTick();
 }
 
 
@@ -130,10 +150,18 @@ async function takePicture(): Promise<string> {
     if (!context) {
         return '';
     }
-    const scaleX = flipX.value ? -1 : 1;
-    canvasEl.value.width = width;
-    canvasEl.value.height = height;
+    const rotated = AUTO_ROTATE && width > height;
+    const scaleX = (flipX.value ? -1 : 1);
+    const [canvasWidth, canvasHeight] = rotated ? [height, width] : [width, height];
+
+    canvasEl.value.width = canvasWidth;
+    canvasEl.value.height = canvasHeight;
     context.filter = 'grayscale(1)';
+
+    if (rotated) {
+        context.translate(height, 0);
+        context.rotate(Math.PI/2);
+    }
     context.scale(scaleX, 1);
     context.drawImage(videoEl.value, 0, 0, scaleX*width, height);
     const data = canvasEl.value!.toDataURL("image/png");
@@ -190,6 +218,14 @@ async function uploadPhoto(dataURL: string)
         >
             Video stream not available
         </video>
+
+        <img
+            v-if="capturePreview"
+            class="capture-preview"
+            :class="{ hidden: capturePreviewHidden }"
+            :src="capturePreview"
+        >
+
         <div v-if="streaming" class="capture-button-area">
             <div></div>
 
@@ -391,7 +427,25 @@ video.capturing {
 .version {
     position: absolute;
     bottom: 0.25em;
-    right: 0.25em;
+    left: 0.5em;
     color: gray;
+}
+
+.capture-preview {
+    background: white;
+    position: absolute;
+    right: 0.5em;
+    bottom: 0.5em;
+    width: 6em;
+    height: auto;
+    border-radius: 1em;
+    border: solid 2px white;
+    opacity: 1;
+    transition: opacity 100ms 250ms;
+}
+
+.capture-preview.hidden {
+    opacity: 0;
+    transition: opacity 750ms 250ms;
 }
 </style>
